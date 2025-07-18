@@ -500,8 +500,8 @@ impl BpeTrainer {
         // Print the length of word_to_id
         println!("Length of word_to_id: {}", word_to_id.len());
 
-        // Print 5 elements in word_to_id
-        println!("Printing 5 elements in word_to_id");
+        // Print 10 elements in word_to_id
+        println!("Printing 10 elements in word_to_id");
         let mut count = 0;
         for (word, id) in &word_to_id {
             println!("Word: {}, ID: {}", word, id);

@@ -722,14 +722,14 @@ impl BpeTrainer {
             let new_token = format!("{}{}", part_a, part_b);
 
             // special case : by not allowing any tokens that contain :Ġ
-            if new_token.contains(":Ġ") {
-                println!("Skipping merge {} {} because of : special-casing", part_a, part_b);
-                continue;
-            }
+            // if new_token.contains(":Ġ") {
+                // println!("Skipping merge {} {} because of : special-casing", part_a, part_b);
+                // continue;
+            // }
             
             // skip any multi-word tokens consisting of n or more Ġ which are not consecutive
             let num_words = new_token.split("Ġ").filter(|s| !s.is_empty()).count();
-            if num_words > 4 {
+            if num_words > 20 {
                 println!("Skipping merge {} {} because it has {} words", part_a, part_b, num_words);
                 continue;
             }

@@ -373,6 +373,7 @@ impl BpeTrainer {
 
                     // Insert the new formed string if necessary
                     if !w2id.contains_key(&s) {
+                        println!("[Warning] Adding new token to vocabulary: '{}'", s);
                         id2w.push(s.clone());
                         w2id.insert(s.clone(), (id2w.len() - 1) as u32);
                     }
@@ -503,9 +504,9 @@ impl BpeTrainer {
         let progress = self.setup_progress();
 
         //
-        // 2. Load the initial alphabet from alphabet.txt
+        // 1. Load the initial alphabet from alphabet.txt
         //
-        println!("Step 2: Load alphabet from file");
+        println!("Step 1: Load alphabet from file");
         let mut alphabet_file = std::fs::File::open("alphabet.txt").unwrap();
         let mut alphabet_contents = String::new();
         alphabet_file.read_to_string(&mut alphabet_contents).unwrap();
@@ -541,9 +542,9 @@ impl BpeTrainer {
         }
 
         //
-        // 3. Tokenize words: turn real words into tokens based on the initial alphabet
+        // 2. Tokenize words: turn real words into tokens based on the initial alphabet
         //
-        println!("Step 3: Tokenize words");
+        println!("Step 2: Tokenize words");
         self.update_progress(&progress, word_counts.len(), "Tokenize words");
         let (words, counts) =
             self.tokenize_words(word_counts, &mut word_to_id, &mut id_to_word, &progress);
@@ -556,9 +557,9 @@ impl BpeTrainer {
         // }
 
         //
-        // 4. Count pairs in words
+        // 3. Count pairs in words
         //
-        println!("Step 4: Count pairs in words");
+        println!("Step 3: Count pairs in words");
         self.update_progress(&progress, words.len(), "Count pairs");
         let (mut pair_counts, mut where_to_update) = self.count_pairs(&words, &counts, &progress);
         // Insert them in the queue
@@ -584,9 +585,9 @@ impl BpeTrainer {
         // }
 
         //
-        // 5. Inherit all the existing merges in merge_order
+        // 4. Inherit all the existing merges in merge_order
         //
-        println!("Step 5: Apply merges");
+        println!("Step 4: Apply merges");
         self.update_progress(&progress, merge_order.len(), "Compute existing merges");
         let mut merges: Vec<(Pair, u32)> = vec![];
 
@@ -598,12 +599,11 @@ impl BpeTrainer {
             // If tokens from merge are not found in the given data
             if !word_to_id.contains_key(left) || !word_to_id.contains_key(right) {
                 if !word_to_id.contains_key(left) {
-                    println!("{} not found in word_to_id", left);
+                    panic!("{} not found in word_to_id", left);
                 }
                 if !word_to_id.contains_key(right) {
-                    println!("{} not found in word_to_id", right);
+                    panic!("{} not found in word_to_id", right);
                 }
-                continue;
             }
 
             // Convert left and right into a Pair using word_to_id
@@ -730,15 +730,15 @@ impl BpeTrainer {
         println!("Length of merges: {}", merges.len());
 
         //
-        // 1. Add all special tokens to the vocabulary (internally modifies word_to_id and id_to_word)
+        // 5. Add all special tokens to the vocabulary (internally modifies word_to_id and id_to_word)
         //
-        println!("Step 1: Add special tokens");
+        println!("Step 5: Add special tokens");
         self.add_special_tokens(&mut word_to_id, &mut id_to_word);
 
         //
         // 6. Add new merges
         //
-        println!("Step 5: Do new merges");
+        println!("Step 6: Do new merges");
         self.update_progress(&progress, self.vocab_size, "Compute new merges");
         // currently queue is HashMap<Pair, Merge>
         // we want to transform it to BinaryHeap while keeping the same entries

@@ -254,10 +254,27 @@ impl BpeTrainer {
 
     /// Add the provided special tokens to the initial vocabulary
     fn add_special_tokens(&self, w2id: &mut HashMap<String, u32>, id2w: &mut Vec<String>) {
-        for token in &self.special_tokens {
-            if !w2id.contains_key(&token.content) {
-                id2w.push(token.content.to_owned());
-                w2id.insert(token.content.to_owned(), (id2w.len() - 1) as u32);
+        // Read special tokens from special_tokens.txt file
+        let mut file = std::fs::File::open("special_tokens.txt").unwrap();
+        let mut contents = String::new();
+        file.read_to_string(&mut contents).unwrap();
+
+        for line in contents.lines() {
+            // Each line is "token token_id" separated by space
+            let mut split = line.split(' ');
+            let token = split.next().unwrap();
+            let token_id: u32 = split.next().unwrap().parse().unwrap();
+
+            // Check that token_id matches the current length of id_to_word
+            if token_id != id2w.len() as u32 {
+                panic!("Expected token_id to be {}, but got {} for token '{}'", id2w.len(), token_id, token);
+            }
+
+            if !w2id.contains_key(token) {
+                id2w.push(token.to_owned());
+                w2id.insert(token.to_owned(), token_id);
+            } else {
+                panic!("Token '{}' already exists in vocabulary", token);
             }
         }
     }
@@ -486,16 +503,28 @@ impl BpeTrainer {
         let progress = self.setup_progress();
 
         //
-        // 1. Add all special tokens to the vocabulary (internally modifies word_to_id and id_to_word)
+        // 2. Load the initial alphabet from alphabet.txt
         //
-        println!("Step 1: Add special tokens");
-        self.add_special_tokens(&mut word_to_id, &mut id_to_word);
+        println!("Step 2: Load alphabet from file");
+        let mut alphabet_file = std::fs::File::open("alphabet.txt").unwrap();
+        let mut alphabet_contents = String::new();
+        alphabet_file.read_to_string(&mut alphabet_contents).unwrap();
 
-        //
-        // 2. Compute the initial alphabet (internally modifies word_to_id and id_to_word)
-        //
-        println!("Step 2: Compute alphabet");
-        self.compute_alphabet(word_counts, &mut word_to_id, &mut id_to_word);
+        for line in alphabet_contents.lines() {
+            // Each line is "token token_id" separated by space
+            let mut split = line.split(' ');
+            let token = split.next().unwrap().to_string();
+            let token_id: u32 = split.next().unwrap().parse().unwrap();
+
+            // Ensure token_id matches the current length of id_to_word
+            if id_to_word.len() != token_id as usize {
+                panic!("Expected token_id to be {}, but got {}", id_to_word.len(), token_id);
+            }
+
+            // Push the token to the end of the vector
+            id_to_word.push(token.clone());
+            word_to_id.insert(token, token_id);
+        }
         
         // Print the length of word_to_id
         println!("Length of word_to_id: {}", word_to_id.len());
@@ -674,6 +703,12 @@ impl BpeTrainer {
 
         // print length of merges
         println!("Length of merges: {}", merges.len());
+
+        //
+        // 1. Add all special tokens to the vocabulary (internally modifies word_to_id and id_to_word)
+        //
+        println!("Step 1: Add special tokens");
+        self.add_special_tokens(&mut word_to_id, &mut id_to_word);
 
         //
         // 6. Add new merges

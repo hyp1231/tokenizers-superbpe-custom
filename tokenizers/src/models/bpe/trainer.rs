@@ -613,6 +613,31 @@ impl BpeTrainer {
 
             if !queue.contains_key(&override_pair) {
                 println!("{} + {} not found in queue", left, right);
+                
+                // Still inherit the merging rule to vocabulary even if not in queue
+                let part_a = &id_to_word[override_pair.0 as usize];
+                let mut part_b = id_to_word[override_pair.1 as usize].to_owned();
+
+                // Build new token
+                if let Some(prefix) = &self.continuing_subword_prefix {
+                    if part_b.starts_with(prefix) {
+                        let prefix_byte_len = prefix.chars().map(|c| c.len_utf8()).sum();
+                        part_b = part_b[prefix_byte_len..].to_string();
+                    }
+                }
+                let new_token = format!("{}{}", part_a, part_b);
+
+                // Insert new token if it does not already exist
+                let new_token_id = word_to_id
+                    .get(&new_token)
+                    .copied()
+                    .unwrap_or(id_to_word.len() as u32);
+                if word_to_id.get(&new_token).is_none() {
+                    id_to_word.push(new_token.clone());
+                    word_to_id.insert(new_token.clone(), new_token_id);
+                }
+                merges.push((override_pair, new_token_id));
+                
                 continue;
             }
             

@@ -799,6 +799,12 @@ impl BpeTrainer {
             // if this code were to be merged, integrate a way in the python bindings to communicate this variable
             // default should be 0/None to maintain previous behavior. 16 is the spm default.
 
+            // Skip merge if part_a ends with digit or part_b starts with digit
+            if part_a.chars().last().map_or(false, |c| c.is_ascii_digit()) || part_b.chars().next().map_or(false, |c| c.is_ascii_digit()) {
+                println!("Skipping merge {} {} because part_a ends with digit or part_b starts with digit", part_a, part_b);
+                continue;
+            }
+
             // Insert new token if it does not already exist
             let new_token_id = word_to_id
                 .get(&new_token)
